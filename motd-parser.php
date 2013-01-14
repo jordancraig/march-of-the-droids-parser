@@ -1,51 +1,59 @@
 <?php
 
-$target_url = "http://www.marchofthedroids.co.uk/";
-$userAgent = 'Googlebot/2.1 (http://www.googlebot.com/bot.html)';
-$date_array= array();
-$title_array = array();
-$article_link_array = array();
-$snippet_array = array();
-$author_array = array();
+//set up variables
+global $title_array;
+global $link_array;
+global $description_array;
+global $date_array;
+global $author_array;
 
 
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
-curl_setopt($ch, CURLOPT_URL,$target_url);
-curl_setopt($ch, CURLOPT_FAILONERROR, true);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+scrape_article_info();
 
-$html= curl_exec($ch);
-$html = @mb_convert_encoding($html, 'HTML-ENTITIES', 'utf-8');
 
-if (!$html) {
-    echo "<br />cURL error number:" .curl_errno($ch);
-    echo "<br />cURL error:" . curl_error($ch);
-    exit;
+function scrape_article_info() {
+
+
+    $rss_feed = simplexml_load_file('http://www.marchofthedroids.co.uk/feed/');
+     
+    foreach($rss_feed->channel->item as $article) {
+      $title_array[] = $article->title;         //article title
+      $link_array[] = $article->link;          //article link
+      $description_array[] = $article->description;   //article desc
+      $date_array[] = $article->pubDate;       //article date
+           
+      //get namespaced items
+      $namespaces = $article->getNameSpaces(true);
+      $dc = $article->children($namespaces['dc']);
+      $author_array[] = $dc->creator;            //article author
+  
+    }
+
+    create_json_document($title_array, $link_array, $description_array, $date_array, $author_array);
+
 }
 
-$dom = new DOMDocument();
-@$dom->loadHTML($html);
 
-$nodes = $dom->getElementsByTagName('*');
 
-foreach($nodes as $node) {
+function create_json_document($title_array, $link_array, $description_array, $date_array, $author_array) {
+    
+    $i = 0;
+    $l = count($title_array);
+    $jsontext = '[';
 
-    if ($node->nodeName == 'h1') {
-        $title_array[] = ($node->nodeValue);        
+    while($i < $l) {
+        
+        $jsontext .= "{" .'"article:"' . "{" . '"title:"'  . 
+                        addslashes($title_array[$i]) . "','" .  '"author:"' . addslashes($author_array[$i]) ."'}, }";
+
+        $i++;
+
     }
+    
+    $jsontext = substr_replace($jsontext, '', -1); // to get rid of extra comma
+    $jsontext .= ']';
+    echo $jsontext;
 
-    if($node->nodeName == 'article') {
-        $inodes = $node->childNodes;
-        foreach($inodes as $inode) {
-            if($inode->nodeName == 'div' && $inode->getAttribute('class') == 'entry-content') {
-                $snippet_array[] = ($inode->nodeValue);
-            }
-        }        
-    }
 }
 
 ?>
