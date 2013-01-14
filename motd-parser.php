@@ -14,7 +14,7 @@ $rss_feed = simplexml_load_file('http://www.marchofthedroids.co.uk/feed/');
 foreach($rss_feed->channel->item as $article) {
 
     $title_array[] = $article->title;        //article title
-    $description = $article->description;
+    $description = htmlentities($article->description);
     $description = substr($description, 0, -148);
     $link_array[] = $article->link;          //article link
     $description_array[] = $description . "...";   //article desc
@@ -38,7 +38,8 @@ function create_json_document($title_array, $link_array, $description_array, $da
     while($i < $l) {
         
         $jsontext .= '"article ' . $i . '":' . " [ { " . '"title":'  . '"' .
-                        $title_array[$i] . '"' . ',' .  '"desc":' . '"' . $description_array[$i] . '"}' . "],";
+                        $title_array[$i] . '"' . ',' . '"author":' . '"' . $author_array[$i] . '"' . ',' .
+                        '"desc":' . '"' . $description_array[$i] . '"}' . "],";
 
         $i++;
 
