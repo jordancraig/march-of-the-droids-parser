@@ -39,19 +39,19 @@ function create_json_document($title_array, $link_array, $description_array, $da
     
     $i = 0;
     $l = count($title_array);
-    $jsontext = '[';
+    $jsontext = '{ "stories": {';
 
     while($i < $l) {
         
-        $jsontext .= "{" .'"article:"' . "{" . '"title:"'  . 
-                        addslashes($title_array[$i]) . "','" .  '"author:"' . addslashes($author_array[$i]) ."'}, }";
+        $jsontext .= '"article":' . "{" . '"title":'  . '"' .
+                        $title_array[$i] . '"' . ',' .  '"author":' . '"' . $author_array[$i] . '"' . "},";
 
         $i++;
 
     }
     
     $jsontext = substr_replace($jsontext, '', -1); // to get rid of extra comma
-    $jsontext .= ']';
+    $jsontext .= '} }';
     echo $jsontext;
 
 }
